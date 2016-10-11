@@ -28,5 +28,7 @@ subprojects {
             }
         }
     }
-}
 
+    tasks.withType(Javadoc).all { enabled = false }
+    tasks.withType(Test).all { enabled = false }
+}
