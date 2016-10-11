@@ -15,43 +15,17 @@
  */
 package com.netflix.turbine.monitor.instance;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.NoRouteToHostException;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
+import com.netflix.config.ConfigurationManager;
+import com.netflix.config.DynamicBooleanProperty;
+import com.netflix.config.DynamicIntProperty;
+import com.netflix.config.DynamicPropertyFactory;
+import com.netflix.turbine.data.DataFromSingleInstance;
+import com.netflix.turbine.discovery.Instance;
+import com.netflix.turbine.handler.PerformanceCriteria;
+import com.netflix.turbine.handler.TurbineDataDispatcher;
+import com.netflix.turbine.handler.TurbineDataHandler;
+import com.netflix.turbine.monitor.MonitorConsole;
+import com.netflix.turbine.monitor.TurbineDataMonitor;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -74,17 +48,46 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.netflix.config.ConfigurationManager;
-import com.netflix.config.DynamicBooleanProperty;
-import com.netflix.config.DynamicIntProperty;
-import com.netflix.config.DynamicPropertyFactory;
-import com.netflix.turbine.data.DataFromSingleInstance;
-import com.netflix.turbine.discovery.Instance;
-import com.netflix.turbine.handler.PerformanceCriteria;
-import com.netflix.turbine.handler.TurbineDataDispatcher;
-import com.netflix.turbine.handler.TurbineDataHandler;
-import com.netflix.turbine.monitor.MonitorConsole;
-import com.netflix.turbine.monitor.TurbineDataMonitor;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.NoRouteToHostException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 
 /**
  * Class that represents a single connection to an {@link Instance}.
@@ -304,6 +307,10 @@ public class InstanceMonitor extends TurbineDataMonitor<DataFromSingleInstance> 
     private void init() throws Exception {
 
         HttpGet httpget = new HttpGet(url);
+
+        String basicAuth = "Basic " + Base64.getEncoder().encodeToString(httpget.getURI().getUserInfo().getBytes(UTF_8));
+
+        httpget.addHeader("Authorization", basicAuth);
 
         HttpResponse response = gatewayHttpClient.getHttpClient().execute(httpget);
 
