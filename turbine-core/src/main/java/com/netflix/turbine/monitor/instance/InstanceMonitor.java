@@ -308,9 +308,11 @@ public class InstanceMonitor extends TurbineDataMonitor<DataFromSingleInstance> 
 
         HttpGet httpget = new HttpGet(url);
 
-        String basicAuth = "Basic " + Base64.getEncoder().encodeToString(httpget.getURI().getUserInfo().getBytes(UTF_8));
-
-        httpget.addHeader("Authorization", basicAuth);
+        String userInfo = httpget.getURI().getUserInfo();
+        if(userInfo != null) {
+            String basicAuth = "Basic " + Base64.getEncoder().encodeToString(userInfo.getBytes(UTF_8));
+            httpget.addHeader("Authorization", basicAuth);
+        }
 
         HttpResponse response = gatewayHttpClient.getHttpClient().execute(httpget);
 
